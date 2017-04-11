@@ -19,23 +19,24 @@ this file and include it in basic-server.js so that it actually works.
 
 module.exports.requestHandler = function(request, response) {
 
-  var defaultCorsdefaultCorsHeaders = {
+  var defaultCorsHeaders = {
     'access-control-allow-origin': '*',
     'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'access-control-allow-defaultCorsHeaders': 'content-type, accept',
+    'access-control-allow-headers': 'content-type, accept',
     'access-control-max-age': 10 // Seconds.
   };
 
   var url = request.url;
   var method = request.method;
-  var data = request._postData;
+  var data = request.json;
 
-  defaultCorsdefaultCorsHeaders['Content-Type'] = 'application/json';
+  defaultCorsHeaders['Content-Type'] = 'application/json';
 
   // response.writeHead(200, defaultCorsdefaultCorsHeaders);
 
   if (method === 'GET') {
     if (url === '/classes/messages') {
+      console.log('Serving request type ' + request.method + ' for url ' + request.url);
       // fs get the whole messages director
       console.log('dirname', __dirname);
       fs.readFile(__dirname + '/classes/messages.txt', 'utf-8', function(err, data) {
@@ -44,10 +45,11 @@ module.exports.requestHandler = function(request, response) {
           response.statusCode = statusCode;
           response.end();
         } else if (data) {
-          console.log(data);
+          data = JSON.parse('[' + data + ']');
+          // console.log(data);
           var statusCode = 200;
           response.statusCode = 200;
-          response.writeHead(statusCode, defaultCorsdefaultCorsHeaders);
+          response.writeHead(statusCode, defaultCorsHeaders);
           response.end(JSON.stringify({ results: data }));
         }
       });      
@@ -55,31 +57,38 @@ module.exports.requestHandler = function(request, response) {
       response.statusCode = 404;
       response.end();
     }
-  } else if (method === 'POST' && data !== undefined) {
-    var username = request.data.username;
-    var message = request.data.message;
-    var data = {
-      username: useranme,
-      message: message
-    };
-    // fs add message to the file
-    fs.appendFile(__dirname + '/classes/messages.txt', JSON.stringify(data), function(err) {
-      if (err) {
-        var statusCode = 404;
-        response.writeHead(statusCode, defaultCorsHeaders);
-        response.end();
-      }
+  } else if (method === 'POST' && url === '/classes/messages') {
+    console.log('Serving request type ' + request.method + ' for url ' + request.url);
+    var stamp = new Date();
+    var body = [];
+    request.on('data', function(message) {
+      body.push(message);
+    }).on('end', function() {
+      var message = Buffer.concat(body).toString();
+      var message = JSON.parse(message);
+      message['createdAt'] = stamp;
+      console.log(message);
+      fs.appendFile(__dirname + '/classes/messages.txt', ',' + JSON.stringify(message), function(err) {
+        if (err) {
+          console.log('error', err);
+          var statusCode = 404;
+          response.writeHead(statusCode, defaultCorsHeaders);
+          response.end();
+        } else {
+          console.log('im posting');
+          response.statusCode = 201;
+          response.end();
+        }
+      });
     });
-    var statusCode = 201;
-    response.writeHead(statusCode, defaultCorsHeaders);
+  } else if (method === 'OPTIONS') {
+    response.writeHead(200, defaultCorsHeaders);
     response.end();
   } else {
     response.statusCode = 404;
     response.end();
   } 
-
-
-  console.log('Serving request type ' + request.method + ' for url ' + request.url);
+  
 };
 
 // These defaultCorsHeaders will allow Cross-Origin Resource Sharing (CORS).

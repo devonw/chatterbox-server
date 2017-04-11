@@ -1,1 +1,1 @@
-{ username: 'Jono', message: 'Do my bidding!' }
+{"username":"Jono","message":"Do my bidding!","createdAt":"2017-04-11T02:41:54.362Z"},{"username":"Zakkk","text":"asdf","roomname":"lobby","createdAt":"2017-04-11T02:51:10.136Z"},{"username":"Zakkk","text":"fuck chatterbox","roomname":"lobby","createdAt":"2017-04-11T02:51:29.874Z"}
